@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Apk Bug Nilz</title></title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    :root{
+      --bg:#040205;
+      --neon1:#ff2b2b;
+      --neon2:#ff6a9b;
+      --glass: rgba(255,255,255,0.03);
+      --muted: rgba(255,255,255,0.7);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Share Tech Mono', monospace;}
+    html,body{height:100%;width:100%;background:#000;color:#fff;overflow:hidden}
+
+    /* canvas background */
+    canvas#nebula { position:fixed; inset:0; z-index:-2; display:block; }
+
+    /* layout: full-screen, mobile-first */
+    .page {
+      position:relative;
+      min-height:100vh;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+
+    /* Login & Main containers (stacked) */
+    #loginPage, #mainPage {
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      transition: opacity .6s ease, transform .6s ease, visibility .6s;
+      padding:24px;
+    }
+    #mainPage{ opacity:0; visibility:hidden; transform:translateY(30px); }
+
+    /* big logo */
+    .logoBig {
+      width:140px;
+      height:140px;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow: 0 18px 60px rgba(255,43,43,0.18), 0 6px 18px rgba(139,0,255,0.06);
+      border:1px solid rgba(255,255,255,0.04);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-bottom:14px;
+      background:linear-gradient(135deg,var(--neon1),var(--neon2));
+    }
+    .logoBig img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+    /* Login box (pterodactyl-like style but mobile & nebula-themed) */
+    .loginBox {
+      width:100%;
+      max-width:420px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
+      border-radius:14px;
+      padding:18px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 10px 30px rgba(255,43,43,0.06);
+      border:1px solid rgba(255,255,255,0.03);
+      text-align:center;
+      transform: translateY(0);
+    }
+    .loginBox h2{ font-size:18px; margin-bottom:6px; text-shadow:0 0 12px rgba(255,43,43,0.9) }
+    .loginBox .hint{ color:var(--muted); font-size:13px; margin-bottom:12px }
+
+    .loginBox input {
+      width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
+      background: rgba(0,0,0,0.35); color:#fff; margin-bottom:10px; font-size:14px; text-align:center;
+    }
+    .loginBox button {
+      width:100%; padding:12px; border-radius:10px; border:none; cursor:pointer; font-weight:800;
+      background: linear-gradient(90deg,var(--neon1),var(--neon2)); color:#fff; font-size:15px;
+      box-shadow: 0 14px 40px rgba(255,43,43,0.14), inset 0 2px 8px rgba(255,255,255,0.02);
+    }
+
+    /* main area */
+    .mainWrap {
+      width:100%; max-width:520px; padding:18px; border-radius:16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.05));
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      border:1px solid rgba(255,255,255,0.03);
+      text-align:center;
+      transform: translateY(0);
+    }
+
+    .headline { margin-bottom:12px; }
+    .headline h1 { font-size:20px; text-shadow:0 0 12px rgba(255,43,43,0.9); margin-bottom:4px }
+    .headline p { font-size:12px; color:var(--muted) }
+
+    .input {
+      margin: 12px 0;
+    }
+    input[type="tel"]{
+      width:100%; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.04);
+      background: rgba(0,0,0,0.36); color:#fff; text-align:center; font-size:15px;
+    }
+
+    .btn {
+      width:100%; padding:14px; border-radius:12px; border:none; margin-top:10px; cursor:pointer;
+      font-weight:800; text-transform:uppercase; letter-spacing:.8px;
+      box-shadow: 0 14px 40px rgba(255,43,43,0.1);
+    }
+    .btn.crash { background: linear-gradient(90deg,#ff2b2b,#ff6a9b); color:#fff; }
+    .btn.delay { background: linear-gradient(90deg,#ffb74d,#ffd54a); color:#2b1000; }
+
+    .terminal {
+      margin-top:14px; background: rgba(0,0,0,0.28); border-radius:10px; padding:12px; font-size:13px; color:var(--muted);
+    }
+
+    .footerArea {
+      margin-top:12px; text-align:center; color:var(--muted); font-size:13px;
+      line-height:1.4;
+    }
+    .footerArea .title { font-weight:700; color:#fff; text-shadow:0 0 8px rgba(255,43,43,0.8) }
+
+    /* popup */
+    .popup {
+      position:fixed; left:50%; top:30%; transform:translate(-50%,-50%) scale(.98);
+      min-width:300px; max-width:92%; padding:14px; border-radius:12px;
+      background: linear-gradient(180deg,#07120a,#072018); box-shadow:0 30px 80px rgba(0,0,0,0.7);
+      border:1px solid rgba(255,255,255,0.04); z-index:9999; display:none; text-align:center;
+    }
+    .popup .head { font-weight:900; color:var(--neon1); margin-bottom:8px; text-transform:uppercase }
+    .popup .body { font-family:'Share Tech Mono', monospace; color:#fff; font-size:15px; white-space:pre-wrap; }
+    .popup.show { display:block; animation: pop .16s ease-out forwards; }
+    @keyframes pop { from { transform:translate(-50%,-50%) scale(.96); opacity:0 } to { transform:translate(-50%,-50%) scale(1); opacity:1 } }
+
+    /* small responsiveness */
+    @media (max-width:420px){
+      .logoBig{width:120px;height:120px}
+      .loginBox, .mainWrap { padding:16px; border-radius:12px }
+      .headline h1 { font-size:18px }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="nebula"></canvas>
+
+  <div class="page">
+
+    <!-- LOGIN PAGE -->
+    <div id="loginPage">
+      <div class="loginBox" role="dialog" aria-modal="true" aria-label="Login">
+        <div class="logoBig">
+          <img src="https://img1.pixhost.to/images/8715/640706594_alwayszakzz.jpg" alt="Logo Nilz">
+        </div>
+
+        <h2>Login Panel</h2>
+        <div class="hint">Masuk untuk Menggunakan bug</div>
+
+        <input id="username" type="text" placeholder="Username" autocomplete="username" />
+        <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
+
+        <button onclick="login()">Login</button>
+      </div>
+    </div>
+
+    <!-- MAIN PAGE -->
+    <div id="mainPage" aria-hidden="true">
+      <div class="mainWrap" role="main">
+        <div class="logoBig" style="margin: 0 auto 12px auto;">
+          <img src="https://img1.pixhost.to/images/8715/640706594_alwayszakzz.jpg" alt="Logo Nilz">
+        </div>
+
+        <div class="headline">
+          <h1>Welcome To Apk Bug Nilz Vip</h1>
+          <p>Support Nilz Terus</p>
+        </div>
+
+        <div class="input">
+          <input id="targetNumber" type="tel" inputmode="tel" placeholder="Masukkan Nomor Target" />
+        </div>
+
+        <button class="btn crash" id="btnCrash">Send Crash</button>
+        <button class="btn delay" id="btnDelay">Send Delay</button>
+
+        <div class="terminal" id="logArea" aria-live="polite">
+          STATUS: Prosess Bug Target...
+        </div>
+
+        <div class="footerArea">
+          <div class="title">© ByNilzHost</div>
+          <div>Hi Thanks Sudah Menggunakan Apk Buatan Nilz</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup -->
+    <div id="popup" class="popup" role="alert" aria-hidden="true">
+      <div class="head">Success</div>
+      <div class="body" id="popupMessage"></div>
+    </div>
+
+  </div>
+
+<script>
+  // internal credentials (kept internal; not printed)
+  const LOGIN_USER = 'free';
+  const LOGIN_PASS = 'nilz123';
+
+  // DOM
+  const loginPage = document.getElementById('loginPage');
+  const mainPage = document.getElementById('mainPage');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const targetInput = document.getElementById('targetNumber');
+  const popup = document.getElementById('popup');
+  const popupMessage = document.getElementById('popupMessage');
+  const logArea = document.getElementById('logArea');
+
+  function showMain(){
+    // hide login
+    loginPage.style.opacity = '0';
+    loginPage.style.visibility = 'hidden';
+    // show main
+    mainPage.style.opacity = '1';
+    mainPage.style.visibility = 'visible';
+    mainPage.style.transform = 'translateY(0)';
+    mainPage.removeAttribute('aria-hidden');
+  }
+
+  function login(){
+    const u = usernameInput.value.trim();
+    const p = passwordInput.value;
+    if(u === LOGIN_USER && p === LOGIN_PASS){
+      showMain();
+    } else {
+      alert('Login gagal — coba username/password yang benar.');
+    }
+  }
+
+  // Button behavior: require number
+  function appendLog(text){
+    const now = new Date();
+    const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    logArea.textContent = `[${t}] ${text}`;
+  }
+
+  function showPopup(text){
+    popupMessage.textContent = '';
+    popup.setAttribute('aria-hidden','false');
+    popup.classList.add('show');
+
+    // typing effect
+    const s = text;
+    let i = 0;
+    const speed = 18 + Math.floor(Math.random()*40);
+    const timer = setInterval(()=>{
+      popupMessage.textContent += s[i++] || '';
+      if(i >= s.length){ clearInterval(timer); setTimeout(hidePopup, 2000); }
+    }, speed);
+  }
+
+  function hidePopup(){
+    popup.classList.remove('show');
+    popup.setAttribute('aria-hidden','true');
+  }
+
+  // Actions
+  document.getElementById('btnCrash').addEventListener('click', ()=>{
+    const num = targetInput.value.trim();
+    if(!num){ appendLog('Gagal: isi nomor target terlebih dahulu.'); return; }
+    appendLog('Send Crash ditekan — simulasi berjalan...');
+    setTimeout(()=>{
+      appendLog('Simulasi: CRASH selesai.');
+      showPopup(`DONE! NOMOR TARGET TELAH TERKENA BUG CRASH — ${num}`);
+    }, 700 + Math.random()*800);
+  });
+
+  document.getElementById('btnDelay').addEventListener('click', ()=>{
+    const num = targetInput.value.trim();
+    if(!num){ appendLog('Gagal: isi nomor target terlebih dahulu.'); return; }
+    appendLog('Send Delay ditekan — simulasi berjalan...');
+    setTimeout(()=>{
+      appendLog('Simulasi: DELAY selesai.');
+      showPopup(`DONE! NOMOR TARGET TELAH TERKENA BUG DELAY — ${num}`);
+    }, 700 + Math.random()*800);
+  });
+
+  // close popup on click
+  popup.addEventListener('click', hidePopup);
+
+  // Accept Enter in login fields
+  [usernameInput, passwordInput].forEach(el=>{
+    el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') login(); });
+  });
+
+  // Enter in phone input triggers crash
+  targetInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') document.getElementById('btnCrash').click(); });
+
+  // --------------------------
+  // Nebula particle canvas
+  // --------------------------
+  const canvas = document.getElementById('nebula');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+
+  const particles = [];
+  const PCOUNT = Math.round((W*H)/4500); // scale particle count by screen area
+
+  function rand(min,max){ return Math.random()*(max-min)+min; }
+
+  function initParticles(){
+    particles.length = 0;
+    for(let i=0;i<PCOUNT;i++){
+      particles.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        r: rand(0.6,2.6),
+        dx: (Math.random()-0.5)*0.6,
+        dy: (Math.random()-0.5)*0.6,
+        alpha: rand(0.2,0.9),
+        hueOffset: Math.floor(rand(0,60))
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // subtle nebula gradients
+    const g1 = ctx.createRadialGradient(W*0.15, H*0.25, 10, W*0.15, H*0.25, Math.max(W,H)*0.8);
+    g1.addColorStop(0, 'rgba(255,40,40,0.12)');
+    g1.addColorStop(1, 'rgba(0,0,0,0)');
+
+    const g2 = ctx.createRadialGradient(W*0.85,H*0.75,10,W*0.85,H*0.75,Math.max(W,H)*0.9);
+    g2.addColorStop(0, 'rgba(255,110,160,0.10)');
+    g2.addColorStop(1, 'rgba(0,0,0,0)');
+
+    ctx.fillStyle = g1;
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = g2;
+    ctx.fillRect(0,0,W,H);
+
+    // draw particles (stars)
+    particles.forEach(p=>{
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      const r = Math.floor(255);
+      const g = Math.floor(40 + p.hueOffset);
+      const b = Math.floor(40 + p.hueOffset/2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${p.alpha})`;
+      ctx.fill();
+      p.x += p.dx;
+      p.y += p.dy;
+      // bounce
+      if(p.x < -10) p.x = W+10;
+      if(p.x > W+10) p.x = -10;
+      if(p.y < -10) p.y = H+10;
+      if(p.y > H+10) p.y = -10;
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  function onResize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    initParticles();
+  }
+  window.addEventListener('resize', onResize);
+  initParticles();
+  draw();
+
+</script>
+</body>
+</html>
